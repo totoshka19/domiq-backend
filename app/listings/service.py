@@ -115,8 +115,10 @@ async def update(
         setattr(listing, field, value)
 
     await db.commit()
-    await db.refresh(listing, ["photos"])
-    return listing
+    result = await db.execute(
+        select(Listing).options(selectinload(Listing.photos)).where(Listing.id == listing_id)
+    )
+    return result.scalar_one()
 
 
 async def archive(
@@ -130,19 +132,21 @@ async def archive(
         raise HTTPException(status_code=403, detail="Нет доступа к этому объявлению")
 
     listing.status = ListingStatus.archived
+    owner_id = listing.owner_id
     await db.commit()
-    await db.refresh(listing, ["photos"])
 
     # Уведомляем владельца об изменении статуса
     from app.auth.models import User
-    from sqlalchemy import select as _select
-    owner_result = await db.execute(_select(User).where(User.id == listing.owner_id))
+    owner_result = await db.execute(select(User).where(User.id == owner_id))
     owner = owner_result.scalar_one_or_none()
     if owner:
         from app.notifications.tasks import send_listing_status_notification
-        send_listing_status_notification.delay(owner.email, listing.title, listing.status.value)
+        send_listing_status_notification.delay(owner.email, listing.title, ListingStatus.archived.value)
 
-    return listing
+    result = await db.execute(
+        select(Listing).options(selectinload(Listing.photos)).where(Listing.id == listing_id)
+    )
+    return result.scalar_one()
 
 
 async def add_favorite(
