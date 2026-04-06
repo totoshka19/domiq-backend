@@ -25,10 +25,35 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      # Переопределяем localhost → имена Docker-сервисов
+      DATABASE_URL: postgresql+asyncpg://postgres:password@postgres:5432/domiq
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
   celery_worker:
     build: .
     command: celery -A core.celery_app worker --loglevel=info --concurrency=2
     env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:password@postgres:5432/domiq
+      REDIS_URL: redis://redis:6379
     depends_on:
       redis:
         condition: service_healthy
@@ -36,6 +61,7 @@ services:
         condition: service_healthy
     profiles:
       - worker
+    restart: unless-stopped
 
   migrate:
     image: python:3.14-slim

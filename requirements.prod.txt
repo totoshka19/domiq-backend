@@ -1,0 +1,32 @@
+# Продакшн-зависимости (без psycopg2 и тестовых пакетов)
+# psycopg2-binary нужен только для локальных Alembic-миграций,
+# в контейнере миграции запускает отдельный сервис migrate
+
+# Web framework
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+
+# Database
+sqlalchemy==2.0.49
+asyncpg==0.31.0
+greenlet==3.3.2
+
+# Validation
+pydantic==2.12.5
+pydantic[email]
+pydantic-settings==2.9.1
+
+# Auth
+python-jose[cryptography]==3.3.0
+bcrypt==5.0.0
+python-multipart==0.0.20
+
+# Background tasks
+celery==5.5.1
+redis==5.2.1
+
+# File storage (Cloudflare R2 / S3)
+boto3==1.38.0
+
+# HTTP client
+httpx==0.28.1
