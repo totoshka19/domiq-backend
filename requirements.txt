@@ -3,7 +3,7 @@ fastapi==0.115.12
 uvicorn[standard]==0.34.0
 
 # Database
-sqlalchemy==2.0.40
+sqlalchemy==2.0.49
 alembic==1.15.2
 asyncpg==0.31.0
 psycopg2-binary==2.9.10   # синхронный драйвер для Alembic миграций
@@ -11,6 +11,7 @@ greenlet==3.3.2             # требуется SQLAlchemy async на Python 3.
 
 # Validation
 pydantic==2.12.5
+pydantic[email]
 pydantic-settings==2.9.1
 
 # Auth
