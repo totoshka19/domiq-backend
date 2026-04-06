@@ -6,6 +6,8 @@ uvicorn[standard]==0.34.0
 sqlalchemy==2.0.40
 alembic==1.15.2
 asyncpg==0.31.0
+psycopg2-binary==2.9.10   # синхронный драйвер для Alembic миграций
+greenlet==3.3.2             # требуется SQLAlchemy async на Python 3.14
 
 # Validation
 pydantic==2.12.5
