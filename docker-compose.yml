@@ -77,7 +77,7 @@ services:
       S3_SECRET_KEY: ""
       S3_ENDPOINT_URL: ""
     command: >
-      bash -c "pip install -q alembic psycopg2-binary 'sqlalchemy>=2' 'pydantic>=2' pydantic-settings &&
+      bash -c "pip install -q -r requirements.prod.txt &&
                alembic upgrade head"
     depends_on:
       postgres:
