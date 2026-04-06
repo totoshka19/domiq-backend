@@ -1,0 +1,33 @@
+# Web framework
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+
+# Database
+sqlalchemy==2.0.40
+alembic==1.15.2
+asyncpg==0.31.0
+
+# Validation
+pydantic==2.12.5
+pydantic-settings==2.9.1
+
+# Auth
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.20
+
+# Background tasks
+celery==5.5.1
+redis==5.2.1
+flower==2.0.1
+
+# File storage (Cloudflare R2 / S3)
+boto3==1.38.0
+
+# HTTP client (for tests)
+httpx==0.28.1
+
+# Testing
+pytest==8.3.5
+pytest-asyncio==0.26.0
+pytest-cov==6.1.0
