@@ -6,6 +6,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.auth.models import User
 from app.chat.models import Conversation, Message
 from app.listings.models import Listing
 
@@ -120,6 +121,35 @@ async def save_message(
     await db.commit()
     await db.refresh(msg)
     return msg
+
+
+async def get_notification_data(
+    db: AsyncSession,
+    conversation_id: uuid.UUID,
+    sender_id: uuid.UUID,
+) -> tuple[Optional[str], str]:
+    """Возвращает (email получателя, имя отправителя) для email-уведомления."""
+    conv_result = await db.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conv = conv_result.scalar_one_or_none()
+    if not conv:
+        return None, ""
+
+    recipient_id = conv.seller_id if conv.buyer_id == sender_id else conv.buyer_id
+
+    users_result = await db.execute(
+        select(User).where(User.id.in_([sender_id, recipient_id]))
+    )
+    users = {u.id: u for u in users_result.scalars().all()}
+
+    recipient = users.get(recipient_id)
+    sender = users.get(sender_id)
+
+    if not recipient or not sender:
+        return None, ""
+
+    return recipient.email, sender.full_name or sender.email
 
 
 async def _get_conversation_for_member(

@@ -124,6 +124,14 @@ async def chat_ws(
 
             async with AsyncSessionLocal() as db:
                 msg = await service.save_message(db, conversation_id, user_id, text)
+                recipient_email, sender_name = await service.get_notification_data(
+                    db, conversation_id, user_id
+                )
+
+            # Отправляем email-уведомление получателю через Celery (не блокируем WS)
+            if recipient_email:
+                from app.notifications.tasks import send_new_message_notification
+                send_new_message_notification.delay(recipient_email, sender_name, text)
 
             await manager.broadcast(conv_id_str, WsMessageOut(
                 id=str(msg.id),

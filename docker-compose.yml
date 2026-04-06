@@ -25,6 +25,18 @@ services:
       timeout: 5s
       retries: 5
 
+  celery_worker:
+    build: .
+    command: celery -A core.celery_app worker --loglevel=info --concurrency=2
+    env_file: .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    profiles:
+      - worker
+
   migrate:
     image: python:3.14-slim
     working_dir: /app

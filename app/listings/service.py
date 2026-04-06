@@ -90,6 +90,13 @@ async def create(db: AsyncSession, data: ListingCreate, owner_id: uuid.UUID) -> 
     db.add(listing)
     await db.commit()
     await db.refresh(listing, ["photos"])
+
+    # Уведомляем администратора о новом объявлении на модерацию
+    from core.config import settings
+    if settings.ADMIN_EMAIL:
+        from app.notifications.tasks import send_moderation_notification
+        send_moderation_notification.delay(settings.ADMIN_EMAIL, listing.title)
+
     return listing
 
 
@@ -125,6 +132,16 @@ async def archive(
     listing.status = ListingStatus.archived
     await db.commit()
     await db.refresh(listing, ["photos"])
+
+    # Уведомляем владельца об изменении статуса
+    from app.auth.models import User
+    from sqlalchemy import select as _select
+    owner_result = await db.execute(_select(User).where(User.id == listing.owner_id))
+    owner = owner_result.scalar_one_or_none()
+    if owner:
+        from app.notifications.tasks import send_listing_status_notification
+        send_listing_status_notification.delay(owner.email, listing.title, listing.status.value)
+
     return listing
 
 
