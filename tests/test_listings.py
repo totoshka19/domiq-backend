@@ -200,8 +200,8 @@ async def test_get_my_listings(client: AsyncClient, listing: dict, agent_token: 
     )
     assert resp.status_code == 200
     data = resp.json()
-    assert len(data) == 1
-    assert data[0]["id"] == listing["id"]
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == listing["id"]
 
 
 async def test_get_my_listings_unauthorized(client: AsyncClient):
@@ -233,9 +233,9 @@ async def test_get_my_listings_filter_by_status(
         headers={"Authorization": f"Bearer {agent_token}"},
     )
     assert active.status_code == 200
-    assert all(l["status"] == "active" for l in active.json())
+    assert all(l["status"] == "active" for l in active.json()["items"])
     assert archived.status_code == 200
-    assert all(l["status"] == "archived" for l in archived.json())
+    assert all(l["status"] == "archived" for l in archived.json()["items"])
 
 
 # ── Favorites ─────────────────────────────────────────────────────────────────
@@ -252,9 +252,9 @@ async def test_add_and_get_favorite(client: AsyncClient, listing: dict, user_tok
         headers={"Authorization": f"Bearer {user_token}"},
     )
     assert fav_resp.status_code == 200
-    favs = fav_resp.json()
-    assert len(favs) == 1
-    assert favs[0]["id"] == listing["id"]
+    data = fav_resp.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == listing["id"]
 
 
 async def test_add_favorite_duplicate(client: AsyncClient, listing: dict, user_token: str):

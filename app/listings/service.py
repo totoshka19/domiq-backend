@@ -239,22 +239,35 @@ async def remove_favorite(
     await db.commit()
 
 
-async def get_favorites(db: AsyncSession, user_id: uuid.UUID) -> list[Listing]:
-    result = await db.execute(
+async def get_favorites(
+    db: AsyncSession, user_id: uuid.UUID, page: int = 1, limit: int = 20
+) -> ListingsPage:
+    query = (
         select(Listing)
         .options(selectinload(Listing.photos), selectinload(Listing.owner))
         .join(Favorite, Favorite.listing_id == Listing.id)
         .where(Favorite.user_id == user_id)
         .order_by(Favorite.created_at.desc())
     )
-    return list(result.scalars().all())
+    count_result = await db.execute(select(func.count()).select_from(query.subquery()))
+    total = count_result.scalar_one()
+    result = await db.execute(query.offset((page - 1) * limit).limit(limit))
+    return ListingsPage(
+        items=list(result.scalars().all()),
+        total=total,
+        page=page,
+        limit=limit,
+        pages=math.ceil(total / limit) if total else 0,
+    )
 
 
 async def get_my(
     db: AsyncSession,
     user_id: uuid.UUID,
+    page: int = 1,
+    limit: int = 20,
     status: Optional[ListingStatus] = None,
-) -> list[Listing]:
+) -> ListingsPage:
     query = (
         select(Listing)
         .options(selectinload(Listing.photos), selectinload(Listing.owner))
@@ -262,8 +275,18 @@ async def get_my(
     )
     if status is not None:
         query = query.where(Listing.status == status)
-    result = await db.execute(query.order_by(Listing.created_at.desc()))
-    return list(result.scalars().all())
+    count_result = await db.execute(select(func.count()).select_from(query.subquery()))
+    total = count_result.scalar_one()
+    result = await db.execute(
+        query.order_by(Listing.created_at.desc()).offset((page - 1) * limit).limit(limit)
+    )
+    return ListingsPage(
+        items=list(result.scalars().all()),
+        total=total,
+        page=page,
+        limit=limit,
+        pages=math.ceil(total / limit) if total else 0,
+    )
 
 
 async def get_similar(

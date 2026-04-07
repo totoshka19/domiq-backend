@@ -14,21 +14,25 @@ from core.database import get_db
 router = APIRouter()
 
 
-@router.get("/favorites", response_model=list[ListingResponse])
+@router.get("/favorites", response_model=ListingsPage)
 async def get_favorites(
+    page: int = 1,
+    limit: int = 20,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> list:
-    return await service.get_favorites(db, current_user.id)
+) -> ListingsPage:
+    return await service.get_favorites(db, current_user.id, page, limit)
 
 
-@router.get("/my", response_model=list[ListingResponse])
+@router.get("/my", response_model=ListingsPage)
 async def get_my(
+    page: int = 1,
+    limit: int = 20,
     status: Optional[ListingStatus] = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> list:
-    return await service.get_my(db, current_user.id, status)
+) -> ListingsPage:
+    return await service.get_my(db, current_user.id, page, limit, status)
 
 
 @router.get("", response_model=ListingsPage)
