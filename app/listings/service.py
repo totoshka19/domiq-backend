@@ -235,3 +235,26 @@ async def get_my(db: AsyncSession, user_id: uuid.UUID) -> list[Listing]:
         .order_by(Listing.created_at.desc())
     )
     return list(result.scalars().all())
+
+
+async def get_similar(
+    db: AsyncSession,
+    listing_id: uuid.UUID,
+    limit: int = 6,
+) -> list[Listing]:
+    listing = await get_by_id(db, listing_id)
+
+    result = await db.execute(
+        select(Listing)
+        .options(selectinload(Listing.photos))
+        .where(
+            Listing.id != listing_id,
+            Listing.status == ListingStatus.active,
+            Listing.city == listing.city,
+            Listing.deal_type == listing.deal_type,
+            Listing.property_type == listing.property_type,
+        )
+        .order_by(func.abs(Listing.price - listing.price))
+        .limit(limit)
+    )
+    return list(result.scalars().all())

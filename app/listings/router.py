@@ -65,6 +65,15 @@ async def get_map(
     return await service.get_map_points(db, city, deal_type, property_type, price_min, price_max)
 
 
+@router.get("/{listing_id}/similar", response_model=list[ListingResponse])
+async def get_similar(
+    listing_id: uuid.UUID,
+    limit: int = 6,
+    db: AsyncSession = Depends(get_db),
+) -> list:
+    return await service.get_similar(db, listing_id, limit)
+
+
 @router.get("/{listing_id}", response_model=ListingResponse)
 async def get_listing(
     listing_id: uuid.UUID,

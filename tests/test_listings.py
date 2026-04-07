@@ -237,3 +237,54 @@ async def test_remove_favorite_not_found(client: AsyncClient, listing: dict, use
         headers={"Authorization": f"Bearer {user_token}"},
     )
     assert resp.status_code == 404
+
+
+# ── GET /api/listings/{id}/similar ───────────────────────────────────────────
+
+async def test_get_similar_empty(client: AsyncClient, listing: dict):
+    """Нет похожих — возвращаем пустой список."""
+    resp = await client.get(f"/api/listings/{listing['id']}/similar")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+async def test_get_similar_returns_matches(
+    client: AsyncClient, listing: dict, agent_token: str
+):
+    """Похожее объявление должно попасть в результат."""
+    await client.post(
+        "/api/listings",
+        json={**_LISTING_PAYLOAD, "title": "Другая квартира", "price": "3200000"},
+        headers={"Authorization": f"Bearer {agent_token}"},
+    )
+    resp = await client.get(f"/api/listings/{listing['id']}/similar")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["title"] == "Другая квартира"
+
+
+async def test_get_similar_excludes_self(client: AsyncClient, listing: dict):
+    """Само объявление не должно появляться среди похожих."""
+    resp = await client.get(f"/api/listings/{listing['id']}/similar")
+    ids = [item["id"] for item in resp.json()]
+    assert listing["id"] not in ids
+
+
+async def test_get_similar_excludes_different_city(
+    client: AsyncClient, listing: dict, agent_token: str
+):
+    """Объявление из другого города не попадает в похожие."""
+    await client.post(
+        "/api/listings",
+        json={**_LISTING_PAYLOAD, "city": "Санкт-Петербург"},
+        headers={"Authorization": f"Bearer {agent_token}"},
+    )
+    resp = await client.get(f"/api/listings/{listing['id']}/similar")
+    assert resp.status_code == 200
+    assert all(item["city"] == listing["city"] for item in resp.json())
+
+
+async def test_get_similar_not_found(client: AsyncClient):
+    resp = await client.get("/api/listings/00000000-0000-0000-0000-000000000000/similar")
+    assert resp.status_code == 404
