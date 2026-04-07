@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.listings.models import DealType, ListingStatus, PropertyType
 
@@ -87,6 +87,15 @@ class ListingResponse(BaseModel):
     updated_at: datetime
     photos: list[ListingPhotoResponse] = []
     owner: Optional[OwnerResponse] = None
+    main_photo_url: Optional[str] = None
+
+    @model_validator(mode="after")
+    def set_main_photo_url(self) -> "ListingResponse":
+        main = next((p for p in self.photos if p.is_main), None)
+        if main is None and self.photos:
+            main = self.photos[0]
+        self.main_photo_url = main.url if main else None
+        return self
 
 
 class ListingsPage(BaseModel):
