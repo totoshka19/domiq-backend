@@ -66,6 +66,7 @@ class Listing(Base):
         Enum(ListingStatus), nullable=False, default=ListingStatus.active, index=True
     )
     is_moderated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    reject_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

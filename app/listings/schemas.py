@@ -73,6 +73,7 @@ class ListingResponse(BaseModel):
     longitude: Optional[Decimal]
     status: ListingStatus
     is_moderated: bool
+    reject_reason: Optional[str]
     created_at: datetime
     updated_at: datetime
     photos: list[ListingPhotoResponse] = []

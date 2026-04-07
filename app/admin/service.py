@@ -74,7 +74,7 @@ async def get_listings(
 
 
 async def moderate_listing(
-    db: AsyncSession, listing_id: uuid.UUID, approve: bool
+    db: AsyncSession, listing_id: uuid.UUID, approve: bool, reason: Optional[str] = None
 ) -> Listing:
     result = await db.execute(select(Listing).where(Listing.id == listing_id))
     listing = result.scalar_one_or_none()
@@ -84,9 +84,11 @@ async def moderate_listing(
     if approve:
         listing.is_moderated = True
         listing.status = ListingStatus.active
+        listing.reject_reason = None
     else:
         listing.is_moderated = False
         listing.status = ListingStatus.archived
+        listing.reject_reason = reason
 
     await db.commit()
     await db.refresh(listing)

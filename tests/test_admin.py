@@ -109,12 +109,31 @@ async def test_approve_listing(client: AsyncClient, admin_token: str, listing: d
 async def test_reject_listing(client: AsyncClient, admin_token: str, listing: dict):
     resp = await client.patch(
         f"/api/admin/listings/{listing['id']}/reject",
+        json={"reason": "Фото не соответствуют описанию"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
     data = resp.json()
     assert data["is_moderated"] is False
     assert data["status"] == "archived"
+    assert data["reject_reason"] == "Фото не соответствуют описанию"
+
+
+async def test_reject_reason_cleared_on_approve(
+    client: AsyncClient, admin_token: str, listing: dict
+):
+    """После approve reject_reason должен сброситься."""
+    await client.patch(
+        f"/api/admin/listings/{listing['id']}/reject",
+        json={"reason": "Причина отказа"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    resp = await client.patch(
+        f"/api/admin/listings/{listing['id']}/approve",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["reject_reason"] is None
 
 
 async def test_approve_nonexistent_listing(client: AsyncClient, admin_token: str):

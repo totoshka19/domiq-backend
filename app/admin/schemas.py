@@ -19,6 +19,10 @@ class AdminUserResponse(BaseModel):
     created_at: datetime
 
 
+class RejectRequest(BaseModel):
+    reason: str
+
+
 class AdminListingResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -28,6 +32,7 @@ class AdminListingResponse(BaseModel):
     city: str
     status: ListingStatus
     is_moderated: bool
+    reject_reason: Optional[str]
     created_at: datetime
 
 

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.admin import service
-from app.admin.schemas import AdminListingResponse, AdminUserResponse, StatsResponse
+from app.admin.schemas import AdminListingResponse, AdminUserResponse, RejectRequest, StatsResponse
 from app.auth.dependencies import role_required
 from app.auth.models import User
 from app.listings.models import ListingStatus
@@ -83,10 +83,11 @@ async def approve_listing(
 @router.patch("/listings/{listing_id}/reject", response_model=AdminListingResponse)
 async def reject_listing(
     listing_id: uuid.UUID,
+    data: RejectRequest,
     _: User = _admin,
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    return await service.moderate_listing(db, listing_id, approve=False)
+    return await service.moderate_listing(db, listing_id, approve=False, reason=data.reason)
 
 
 @router.get("/stats", response_model=StatsResponse)
