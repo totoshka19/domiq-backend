@@ -18,11 +18,15 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # Cloudflare R2
+    # S3-совместимое хранилище (Supabase Storage / Cloudflare R2)
     S3_BUCKET_NAME: str = ""
     S3_ACCESS_KEY: str = ""
     S3_SECRET_KEY: str = ""
     S3_ENDPOINT_URL: str = ""
+    S3_REGION: str = "auto"
+    # Публичный базовый URL для доступа к файлам (может отличаться от endpoint)
+    # Supabase: https://<ref>.supabase.co/storage/v1/object/public
+    S3_PUBLIC_URL: str = ""
 
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000"

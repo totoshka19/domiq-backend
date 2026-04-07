@@ -22,8 +22,13 @@ def _s3_client():
         endpoint_url=settings.S3_ENDPOINT_URL or None,
         aws_access_key_id=settings.S3_ACCESS_KEY or None,
         aws_secret_access_key=settings.S3_SECRET_KEY or None,
-        region_name="auto",
+        region_name=settings.S3_REGION,
     )
+
+
+def _public_url(key: str) -> str:
+    base = settings.S3_PUBLIC_URL or settings.S3_ENDPOINT_URL
+    return f"{base}/{settings.S3_BUCKET_NAME}/{key}"
 
 
 async def _get_listing_for_owner(
@@ -86,7 +91,7 @@ async def upload_photos(
         except ClientError as e:
             raise HTTPException(status_code=500, detail=f"Ошибка загрузки файла: {e}")
 
-        url = f"{settings.S3_ENDPOINT_URL}/{settings.S3_BUCKET_NAME}/{key}"
+        url = _public_url(key)
         is_main = len(existing_photos) == 0 and len(created) == 0
 
         photo = ListingPhoto(
