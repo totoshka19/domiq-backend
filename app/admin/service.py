@@ -108,9 +108,17 @@ async def moderate_listing(
 
 
 async def get_stats(db: AsyncSession) -> StatsResponse:
+    from sqlalchemy import cast, Date
+    from datetime import date
+
     users_total = (await db.execute(select(func.count(User.id)))).scalar_one()
     users_active = (
         await db.execute(select(func.count(User.id)).where(User.is_active == True))  # noqa: E712
+    ).scalar_one()
+    users_new_today = (
+        await db.execute(
+            select(func.count(User.id)).where(cast(User.created_at, Date) == date.today())
+        )
     ).scalar_one()
     listings_total = (await db.execute(select(func.count(Listing.id)))).scalar_one()
     listings_active = (
@@ -134,6 +142,7 @@ async def get_stats(db: AsyncSession) -> StatsResponse:
     return StatsResponse(
         users_total=users_total,
         users_active=users_active,
+        users_new_today=users_new_today,
         listings_total=listings_total,
         listings_active=listings_active,
         listings_pending_moderation=listings_pending,

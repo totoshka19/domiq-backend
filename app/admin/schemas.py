@@ -39,6 +39,7 @@ class AdminListingResponse(BaseModel):
 class StatsResponse(BaseModel):
     users_total: int
     users_active: int
+    users_new_today: int
     listings_total: int
     listings_active: int
     listings_pending_moderation: int
