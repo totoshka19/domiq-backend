@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -19,6 +20,12 @@ class MessageResponse(BaseModel):
     created_at: datetime
 
 
+class OtherUserResponse(BaseModel):
+    id: uuid.UUID
+    full_name: str
+    avatar_url: Optional[str]
+
+
 class ConversationResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -27,7 +34,9 @@ class ConversationResponse(BaseModel):
     buyer_id: uuid.UUID
     seller_id: uuid.UUID
     created_at: datetime
-    last_message: MessageResponse | None = None
+    last_message: Optional[MessageResponse] = None
+    other_user: Optional[OtherUserResponse] = None
+    unread_count: int = 0
 
 
 class WsMessageIn(BaseModel):

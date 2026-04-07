@@ -98,6 +98,27 @@ async def test_get_my_conversations_empty(client: AsyncClient, user_token: str):
     assert resp.json() == []
 
 
+async def test_get_my_conversations_has_other_user_and_unread(
+    client: AsyncClient, listing: dict, user_token: str
+):
+    await client.post(
+        "/api/chat/conversations",
+        json={"listing_id": listing["id"]},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    resp = await client.get(
+        "/api/chat/conversations",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()[0]
+    assert "other_user" in data
+    assert data["other_user"] is not None
+    assert "full_name" in data["other_user"]
+    assert "unread_count" in data
+    assert data["unread_count"] == 0
+
+
 async def test_get_my_conversations_unauthorized(client: AsyncClient):
     resp = await client.get("/api/chat/conversations")
     assert resp.status_code == 401

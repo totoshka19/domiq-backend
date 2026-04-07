@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -55,9 +55,24 @@ async def get_my_conversations(
     )
     conversations = result.scalars().all()
 
-    # Подгружаем последнее сообщение для каждого чата
+    if not conversations:
+        return []
+
+    # Собираем все ID собеседников за один запрос
+    other_ids = [
+        conv.seller_id if conv.buyer_id == user_id else conv.buyer_id
+        for conv in conversations
+    ]
+    users_result = await db.execute(
+        select(User).where(User.id.in_(other_ids))
+    )
+    users_by_id = {u.id: u for u in users_result.scalars().all()}
+
     enriched = []
     for conv in conversations:
+        other_id = conv.seller_id if conv.buyer_id == user_id else conv.buyer_id
+        conv._other_user = users_by_id.get(other_id)
+
         last = await db.execute(
             select(Message)
             .where(Message.conversation_id == conv.id)
@@ -65,6 +80,16 @@ async def get_my_conversations(
             .limit(1)
         )
         conv._last_message = last.scalar_one_or_none()
+
+        unread_result = await db.execute(
+            select(func.count(Message.id)).where(
+                Message.conversation_id == conv.id,
+                Message.sender_id != user_id,
+                Message.is_read == False,  # noqa: E712
+            )
+        )
+        conv._unread_count = unread_result.scalar_one()
+
         enriched.append(conv)
     return enriched
 

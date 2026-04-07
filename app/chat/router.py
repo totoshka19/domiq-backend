@@ -11,6 +11,7 @@ from app.chat.schemas import (
     ConversationCreate,
     ConversationResponse,
     MessageResponse,
+    OtherUserResponse,
     WsMessageOut,
 )
 from core.database import AsyncSessionLocal, get_db
@@ -152,6 +153,7 @@ async def chat_ws(
 
 def _to_response(conv: object) -> ConversationResponse:
     last = getattr(conv, "_last_message", None)
+    other = getattr(conv, "_other_user", None)
     return ConversationResponse(
         id=conv.id,
         listing_id=conv.listing_id,
@@ -159,4 +161,10 @@ def _to_response(conv: object) -> ConversationResponse:
         seller_id=conv.seller_id,
         created_at=conv.created_at,
         last_message=MessageResponse.model_validate(last) if last else None,
+        other_user=OtherUserResponse(
+            id=other.id,
+            full_name=other.full_name,
+            avatar_url=other.avatar_url,
+        ) if other else None,
+        unread_count=getattr(conv, "_unread_count", 0),
     )
