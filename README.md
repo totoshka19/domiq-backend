@@ -2,6 +2,8 @@
 
 REST API для маркетплейса недвижимости. Модульный монолит на FastAPI.
 
+**Swagger (продакшн):** https://domiq-backend.onrender.com/docs
+
 ## Стек
 
 - **Python 3.12** + **FastAPI**
