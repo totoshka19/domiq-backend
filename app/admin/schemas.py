@@ -16,6 +16,7 @@ class AdminUserResponse(BaseModel):
     full_name: str
     role: UserRole
     is_active: bool
+    listings_count: int = 0
     created_at: datetime
 
 

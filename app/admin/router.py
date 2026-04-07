@@ -27,7 +27,7 @@ async def get_users(
 ) -> dict:
     users, total = await service.get_users(db, page, limit, is_active, search)
     return {
-        "items": [AdminUserResponse.model_validate(u) for u in users],
+        "items": users,
         "total": total,
         "page": page,
         "limit": limit,

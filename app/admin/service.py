@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.models import User
 from app.chat.models import Conversation, Message
 from app.listings.models import Listing, ListingStatus
-from app.admin.schemas import StatsResponse
+from app.admin.schemas import StatsResponse, AdminUserResponse
 
 
 async def get_users(
@@ -17,7 +17,7 @@ async def get_users(
     limit: int = 50,
     is_active: Optional[bool] = None,
     search: Optional[str] = None,
-) -> tuple[list[User], int]:
+) -> tuple[list[AdminUserResponse], int]:
     query = select(User)
     if is_active is not None:
         query = query.where(User.is_active == is_active)
@@ -32,7 +32,24 @@ async def get_users(
     result = await db.execute(
         query.order_by(User.created_at.desc()).offset((page - 1) * limit).limit(limit)
     )
-    return list(result.scalars().all()), total
+    users = list(result.scalars().all())
+
+    # Считаем listings_count для всех пользователей одним запросом
+    user_ids = [u.id for u in users]
+    counts_result = await db.execute(
+        select(Listing.owner_id, func.count(Listing.id))
+        .where(Listing.owner_id.in_(user_ids))
+        .group_by(Listing.owner_id)
+    )
+    listings_counts = dict(counts_result.all())
+
+    enriched = []
+    for user in users:
+        data = AdminUserResponse.model_validate(user)
+        data.listings_count = listings_counts.get(user.id, 0)
+        enriched.append(data)
+
+    return enriched, total
 
 
 async def set_user_active(db: AsyncSession, user_id: uuid.UUID, is_active: bool) -> User:
