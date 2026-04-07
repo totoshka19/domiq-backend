@@ -10,6 +10,7 @@ from app.chat import service
 from app.chat.schemas import (
     ConversationCreate,
     ConversationResponse,
+    ListingBriefResponse,
     MessageResponse,
     OtherUserResponse,
     WsMessageOut,
@@ -154,6 +155,7 @@ async def chat_ws(
 def _to_response(conv: object) -> ConversationResponse:
     last = getattr(conv, "_last_message", None)
     other = getattr(conv, "_other_user", None)
+    listing = getattr(conv, "_listing", None)
     return ConversationResponse(
         id=conv.id,
         listing_id=conv.listing_id,
@@ -167,4 +169,9 @@ def _to_response(conv: object) -> ConversationResponse:
             avatar_url=other.avatar_url,
         ) if other else None,
         unread_count=getattr(conv, "_unread_count", 0),
+        listing=ListingBriefResponse(
+            id=listing.id,
+            title=listing.title,
+            main_photo_url=getattr(conv, "_main_photo_url", None),
+        ) if listing else None,
     )

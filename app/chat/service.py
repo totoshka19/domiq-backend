@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.auth.models import User
 from app.chat.models import Conversation, Message
-from app.listings.models import Listing
+from app.listings.models import Listing, ListingPhoto
 
 
 async def get_or_create_conversation(
@@ -58,6 +58,22 @@ async def get_my_conversations(
     if not conversations:
         return []
 
+    # Загружаем листинги одним запросом
+    listing_ids = [conv.listing_id for conv in conversations]
+    listings_result = await db.execute(
+        select(Listing).where(Listing.id.in_(listing_ids))
+    )
+    listings_by_id = {l.id: l for l in listings_result.scalars().all()}
+
+    # Загружаем главные фото одним запросом
+    main_photos_result = await db.execute(
+        select(ListingPhoto).where(
+            ListingPhoto.listing_id.in_(listing_ids),
+            ListingPhoto.is_main == True,  # noqa: E712
+        )
+    )
+    main_photos_by_listing = {p.listing_id: p for p in main_photos_result.scalars().all()}
+
     # Собираем все ID собеседников за один запрос
     other_ids = [
         conv.seller_id if conv.buyer_id == user_id else conv.buyer_id
@@ -72,6 +88,11 @@ async def get_my_conversations(
     for conv in conversations:
         other_id = conv.seller_id if conv.buyer_id == user_id else conv.buyer_id
         conv._other_user = users_by_id.get(other_id)
+
+        listing = listings_by_id.get(conv.listing_id)
+        main_photo = main_photos_by_listing.get(conv.listing_id)
+        conv._listing = listing
+        conv._main_photo_url = main_photo.url if main_photo else None
 
         last = await db.execute(
             select(Message)

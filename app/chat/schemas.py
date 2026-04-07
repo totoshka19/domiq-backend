@@ -26,6 +26,12 @@ class OtherUserResponse(BaseModel):
     avatar_url: Optional[str]
 
 
+class ListingBriefResponse(BaseModel):
+    id: uuid.UUID
+    title: str
+    main_photo_url: Optional[str]
+
+
 class ConversationResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -37,6 +43,7 @@ class ConversationResponse(BaseModel):
     last_message: Optional[MessageResponse] = None
     other_user: Optional[OtherUserResponse] = None
     unread_count: int = 0
+    listing: Optional[ListingBriefResponse] = None
 
 
 class WsMessageIn(BaseModel):
