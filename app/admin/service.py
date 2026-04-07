@@ -96,8 +96,11 @@ async def moderate_listing(
     owner_result = await db.execute(select(UserModel).where(UserModel.id == listing.owner_id))
     owner = owner_result.scalar_one_or_none()
     if owner:
-        from app.notifications.tasks import send_listing_status_notification
-        send_listing_status_notification.delay(owner.email, listing.title, listing.status.value)
+        try:
+            from app.notifications.tasks import send_listing_status_notification
+            send_listing_status_notification.delay(owner.email, listing.title, listing.status.value)
+        except Exception:
+            pass  # Celery недоступен — не блокируем модерацию
 
     return listing
 
