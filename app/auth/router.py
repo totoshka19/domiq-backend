@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,17 +18,20 @@ from app.auth.schemas import (
 from core.database import get_db
 from core.redis import blacklist_token, is_token_blacklisted
 from core.security import create_access_token, create_refresh_token, decode_token
+from core.limiter import limiter
 
 router = APIRouter()
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
-async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)) -> User:
+@limiter.limit("3/minute")
+async def register(request: Request, data: RegisterRequest, db: AsyncSession = Depends(get_db)) -> User:
     return await service.register(db, data)
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
+@limiter.limit("5/minute")
+async def login(request: Request, data: LoginRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
     user = await service.authenticate(db, data.email, data.password)
     access_token = create_access_token({"sub": str(user.id)})
     refresh_token = create_refresh_token({"sub": str(user.id)})

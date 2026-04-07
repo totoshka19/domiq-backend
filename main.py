@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+from core.limiter import limiter
 
 from core.config import settings
 from app.auth.router import router as auth_router
@@ -15,6 +19,8 @@ app = FastAPI(
     version="1.0.0",
     description="Маркетплейс недвижимости",
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

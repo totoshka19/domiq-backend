@@ -14,6 +14,15 @@ import app.listings.models  # noqa: F401
 import app.chat.models  # noqa: F401
 
 from main import app  # noqa: E402 — намеренно после model-импортов
+from core.limiter import limiter
+
+
+@pytest.fixture(autouse=True)
+def disable_rate_limiting():
+    """Отключить rate limiting в тестах."""
+    limiter.enabled = False
+    yield
+    limiter.enabled = True
 
 
 @pytest.fixture(autouse=True)
