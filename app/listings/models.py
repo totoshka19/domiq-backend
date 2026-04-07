@@ -80,6 +80,7 @@ class Listing(Base):
     photos: Mapped[list["ListingPhoto"]] = relationship(
         "ListingPhoto", back_populates="listing", cascade="all, delete-orphan"
     )
+    owner: Mapped["User"] = relationship("User", foreign_keys=[owner_id], lazy="noload")
 
 
 class ListingPhoto(Base):

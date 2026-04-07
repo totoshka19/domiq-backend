@@ -14,7 +14,7 @@ from app.listings.schemas import ListingCreate, ListingUpdate, ListingsMapRespon
 async def get_by_id(db: AsyncSession, listing_id: uuid.UUID) -> Listing:
     result = await db.execute(
         select(Listing)
-        .options(selectinload(Listing.photos))
+        .options(selectinload(Listing.photos), selectinload(Listing.owner))
         .where(Listing.id == listing_id)
     )
     listing = result.scalar_one_or_none()
@@ -40,7 +40,7 @@ async def get_list(
 ) -> ListingsPage:
     query = (
         select(Listing)
-        .options(selectinload(Listing.photos))
+        .options(selectinload(Listing.photos), selectinload(Listing.owner))
         .where(Listing.status == ListingStatus.active)
     )
 
@@ -151,7 +151,7 @@ async def update(
 
     await db.commit()
     result = await db.execute(
-        select(Listing).options(selectinload(Listing.photos)).where(Listing.id == listing_id)
+        select(Listing).options(selectinload(Listing.photos), selectinload(Listing.owner)).where(Listing.id == listing_id)
     )
     return result.scalar_one()
 
@@ -179,7 +179,7 @@ async def archive(
         send_listing_status_notification.delay(owner.email, listing.title, ListingStatus.archived.value)
 
     result = await db.execute(
-        select(Listing).options(selectinload(Listing.photos)).where(Listing.id == listing_id)
+        select(Listing).options(selectinload(Listing.photos), selectinload(Listing.owner)).where(Listing.id == listing_id)
     )
     return result.scalar_one()
 
@@ -219,7 +219,7 @@ async def remove_favorite(
 async def get_favorites(db: AsyncSession, user_id: uuid.UUID) -> list[Listing]:
     result = await db.execute(
         select(Listing)
-        .options(selectinload(Listing.photos))
+        .options(selectinload(Listing.photos), selectinload(Listing.owner))
         .join(Favorite, Favorite.listing_id == Listing.id)
         .where(Favorite.user_id == user_id)
         .order_by(Favorite.created_at.desc())
@@ -230,7 +230,7 @@ async def get_favorites(db: AsyncSession, user_id: uuid.UUID) -> list[Listing]:
 async def get_my(db: AsyncSession, user_id: uuid.UUID) -> list[Listing]:
     result = await db.execute(
         select(Listing)
-        .options(selectinload(Listing.photos))
+        .options(selectinload(Listing.photos), selectinload(Listing.owner))
         .where(Listing.owner_id == user_id)
         .order_by(Listing.created_at.desc())
     )
@@ -246,7 +246,7 @@ async def get_similar(
 
     result = await db.execute(
         select(Listing)
-        .options(selectinload(Listing.photos))
+        .options(selectinload(Listing.photos), selectinload(Listing.owner))
         .where(
             Listing.id != listing_id,
             Listing.status == ListingStatus.active,

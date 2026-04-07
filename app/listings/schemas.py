@@ -8,6 +8,15 @@ from pydantic import BaseModel, ConfigDict
 from app.listings.models import DealType, ListingStatus, PropertyType
 
 
+class OwnerResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    full_name: str
+    avatar_url: Optional[str]
+    role: str
+
+
 class ListingPhotoResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -77,6 +86,7 @@ class ListingResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     photos: list[ListingPhotoResponse] = []
+    owner: Optional[OwnerResponse] = None
 
 
 class ListingsPage(BaseModel):
