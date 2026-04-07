@@ -43,6 +43,8 @@ async def get_listings(
     rooms: Optional[int] = None,
     area_min: Optional[float] = None,
     area_max: Optional[float] = None,
+    floor_min: Optional[int] = None,
+    floor_max: Optional[int] = None,
     sort_by: str = "created_at",
     sort_order: str = "desc",
     db: AsyncSession = Depends(get_db),
@@ -50,7 +52,7 @@ async def get_listings(
     return await service.get_list(
         db, page, limit, city, deal_type, property_type,
         price_min, price_max, rooms, area_min, area_max,
-        sort_by, sort_order,
+        floor_min, floor_max, sort_by, sort_order,
     )
 
 

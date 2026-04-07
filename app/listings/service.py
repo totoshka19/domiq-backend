@@ -35,6 +35,8 @@ async def get_list(
     rooms: Optional[int] = None,
     area_min: Optional[float] = None,
     area_max: Optional[float] = None,
+    floor_min: Optional[int] = None,
+    floor_max: Optional[int] = None,
     sort_by: str = "created_at",
     sort_order: str = "desc",
 ) -> ListingsPage:
@@ -60,6 +62,10 @@ async def get_list(
         query = query.where(Listing.area >= area_min)
     if area_max is not None:
         query = query.where(Listing.area <= area_max)
+    if floor_min is not None:
+        query = query.where(Listing.floor >= floor_min)
+    if floor_max is not None:
+        query = query.where(Listing.floor <= floor_max)
 
     count_result = await db.execute(
         select(func.count()).select_from(query.subquery())
