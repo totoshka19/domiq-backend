@@ -1,4 +1,5 @@
 from typing import Optional
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,7 +15,27 @@ class Settings(BaseSettings):
 
     @property
     def db_url(self) -> str:
-        return self.APP_DATABASE_URL or self.DATABASE_URL
+        url = self.APP_DATABASE_URL or self.DATABASE_URL
+
+        # Нормализуем схему для asyncpg
+        if url.startswith("postgres://"):
+            url = "postgresql+asyncpg://" + url[len("postgres://"):]
+        elif url.startswith("postgresql://"):
+            url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+
+        # Нормализуем параметры SSL: убираем libpq-специфичные, добавляем asyncpg-совместимые
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query, keep_blank_values=True)
+
+        if "sslmode" in params:
+            sslmode = params.pop("sslmode")[0]
+            if sslmode == "require" and "ssl" not in params:
+                params["ssl"] = ["require"]
+
+        params.pop("channel_binding", None)
+
+        new_query = urlencode({k: v[0] for k, v in params.items()})
+        return urlunparse(parsed._replace(query=new_query))
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
