@@ -22,6 +22,23 @@ def celery_eager(monkeypatch):
     from core.celery_app import celery
     celery.conf.update(task_always_eager=True, task_eager_propagates=False)
 
+
+@pytest.fixture(autouse=True)
+def mock_redis(monkeypatch):
+    """Мок Redis — в тестах нет реального Redis."""
+    import core.redis as redis_module
+
+    blacklist: set[str] = set()
+
+    async def fake_blacklist_token(token: str, ttl_seconds: int) -> None:
+        blacklist.add(token)
+
+    async def fake_is_blacklisted(token: str) -> bool:
+        return token in blacklist
+
+    monkeypatch.setattr(redis_module, "blacklist_token", fake_blacklist_token)
+    monkeypatch.setattr(redis_module, "is_token_blacklisted", fake_is_blacklisted)
+
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 
