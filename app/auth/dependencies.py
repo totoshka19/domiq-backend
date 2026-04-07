@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
@@ -7,13 +9,15 @@ from app.auth.models import User
 from core.database import get_db
 from core.security import decode_token
 
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Не авторизован")
     token = credentials.credentials
     try:
         payload = decode_token(token)
