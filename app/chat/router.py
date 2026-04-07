@@ -130,8 +130,11 @@ async def chat_ws(
 
             # Отправляем email-уведомление получателю через Celery (не блокируем WS)
             if recipient_email:
-                from app.notifications.tasks import send_new_message_notification
-                send_new_message_notification.delay(recipient_email, sender_name, text)
+                try:
+                    from app.notifications.tasks import send_new_message_notification
+                    send_new_message_notification.delay(recipient_email, sender_name, text)
+                except Exception:
+                    pass  # Celery недоступен — не рвём WebSocket соединение
 
             await manager.broadcast(conv_id_str, WsMessageOut(
                 id=str(msg.id),
