@@ -6,7 +6,7 @@ from core.base import Base  # noqa: F401 — re-export for convenience
 from core.config import settings
 
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    settings.db_url,
     echo=True,
     connect_args={"prepared_statement_cache_size": 0},
 )

@@ -7,7 +7,14 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     # Database
+    # APP_DATABASE_URL позволяет переопределить DATABASE_URL на платформах,
+    # которые блокируют это имя переменной (например, Replit)
+    APP_DATABASE_URL: Optional[str] = None
     DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/domiq"
+
+    @property
+    def db_url(self) -> str:
+        return self.APP_DATABASE_URL or self.DATABASE_URL
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
