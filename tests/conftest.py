@@ -39,6 +39,10 @@ def mock_redis(monkeypatch):
     monkeypatch.setattr(redis_module, "blacklist_token", fake_blacklist_token)
     monkeypatch.setattr(redis_module, "is_token_blacklisted", fake_is_blacklisted)
 
+    import app.auth.router as auth_router
+    monkeypatch.setattr(auth_router, "blacklist_token", fake_blacklist_token)
+    monkeypatch.setattr(auth_router, "is_token_blacklisted", fake_is_blacklisted)
+
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 
