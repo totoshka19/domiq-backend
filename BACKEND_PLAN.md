@@ -822,57 +822,46 @@ docker-compose down
 
 ---
 
-## Шаг 13 — Деплой на Render + Neon + Upstash + R2
+## Шаг 13 — Деплой на Back4App + Neon + Upstash + R2
 
-### 13.1 Neon — создание базы данных
-1. Зарегистрироваться на neon.tech (без карты)
-2. Создать проект `domiq`, регион Frankfurt или Paris
-3. Скопировать строку подключения вида:
-   `postgresql+asyncpg://user:pass@ep-xxx.eu-central-1.aws.neon.tech/domiq?sslmode=require`
-4. Вставить в переменную `DATABASE_URL` на Render
+> **Фактический деплой:** Back4App Containers (вместо Render)
+> API: https://domiqapi-oxhvavka.b4a.run
+> Dashboard: https://containers.back4app.com/apps/d446c5af-d1c4-413a-8bf1-d9b9774818c0
 
-### 13.2 Upstash — создание Redis
-1. Зарегистрироваться на upstash.com
-2. Создать базу данных Redis, регион EU-West
-3. Скопировать `UPSTASH_REDIS_REST_URL` → преобразовать в `rediss://`
-4. Вставить в переменную `REDIS_URL` на Render
+### 13.1 Neon — создание базы данных ✅ СДЕЛАНО
+- Проект `domiq`, регион EU Central (Frankfurt)
+- Все 4 миграции применены, HEAD: `b459f462d10b`
+- Подключение через pooler: `postgresql+asyncpg://neondb_owner:...@ep-bitter-lab-ali3nuje-pooler.c-3.eu-central-1.aws.neon.tech/neondb`
 
-### 13.3 Cloudflare R2 — создание бакета
+### 13.2 Upstash — создание Redis ✅ СДЕЛАНО
+- База `domiq`, регион Frankfurt (AWS eu-central-1)
+- URL: `rediss://default:...@ethical-adder-93439.upstash.io:6379`
+
+### 13.3 Cloudflare R2 — создание бакета ⬜ НЕ СДЕЛАНО
 1. Зарегистрироваться на cloudflare.com
 2. Перейти в R2 Object Storage → Create bucket → `domiq-files`
 3. Создать API Token с правами Object Read & Write
 4. Включить публичный доступ к бакету (для URL фотографий)
-5. Вставить ключи в переменные `S3_*` на Render
+5. Добавить в Back4App переменные окружения:
+   - `S3_BUCKET_NAME=domiq-files`
+   - `S3_ACCESS_KEY=...`
+   - `S3_SECRET_KEY=...`
+   - `S3_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com`
 
-### 13.4 Render — деплой бэкенда
-1. Зарегистрироваться на render.com → Connect GitHub
-2. **Web Service** (FastAPI):
-   - Repository: domiq-backend
-   - Branch: main
-   - Build: `pip install -r requirements.txt`
-   - Start: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-   - Add Health Check: `/health`
-3. **Background Worker** (Celery):
-   - Тот же репозиторий, тип: Background Worker
-   - Start: `celery -A core.celery_app worker --loglevel=info`
-4. В обоих сервисах добавить все переменные из `.env.example`
-5. После деплоя применить миграции:
-   ```bash
-   # Через Render Shell или локально с prod DATABASE_URL
-   alembic upgrade head
-   ```
+### 13.4 Back4App Containers — деплой бэкенда ✅ СДЕЛАНО
+- Репозиторий: totoshka19/domiq-backend, ветка: main
+- Деплой автоматический при пуше в main
+- Переменные окружения выставлены в Settings → Environment Variables
+- Healthcheck: GET /health каждые 30 секунд
 
-### 13.5 Vercel — деплой фронтенда (domiq-frontend)
+### 13.5 Vercel — деплой фронтенда (domiq-frontend) ⬜ НЕ СДЕЛАНО
 1. Подключить репозиторий domiq-frontend
 2. Framework Preset: Vite
-3. Добавить переменную `VITE_API_URL=https://domiq-backend.onrender.com/api`
+3. Добавить переменную `VITE_API_URL=https://domiqapi-oxhvavka.b4a.run/api`
 
-### 13.6 Важно: Render засыпает на бесплатном плане
-Сервис засыпает после 15 минут неактивности. Для MVP это нормально.
-Чтобы избежать cold start — добавить `/health` эндпоинт и мониторинг через UptimeRobot (бесплатно):
-- Создать аккаунт на uptimerobot.com
-- Добавить HTTP-монитор на `https://ваш-сервис.onrender.com/health`
-- Интервал: 5 минут — сервис не будет засыпать
+### 13.6 Важно: Back4App на бесплатном плане
+- URL временный (активен 60 минут после деплоя) — для постоянного нужен платный план
+- Для MVP достаточно, пока разрабатывается фронтенд
 
 ---
 
