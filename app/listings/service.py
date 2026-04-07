@@ -227,13 +227,19 @@ async def get_favorites(db: AsyncSession, user_id: uuid.UUID) -> list[Listing]:
     return list(result.scalars().all())
 
 
-async def get_my(db: AsyncSession, user_id: uuid.UUID) -> list[Listing]:
-    result = await db.execute(
+async def get_my(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    status: Optional[ListingStatus] = None,
+) -> list[Listing]:
+    query = (
         select(Listing)
         .options(selectinload(Listing.photos), selectinload(Listing.owner))
         .where(Listing.owner_id == user_id)
-        .order_by(Listing.created_at.desc())
     )
+    if status is not None:
+        query = query.where(Listing.status == status)
+    result = await db.execute(query.order_by(Listing.created_at.desc()))
     return list(result.scalars().all())
 
 

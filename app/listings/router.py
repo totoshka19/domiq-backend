@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user, role_required
 from app.auth.models import User, UserRole
 from app.listings import service
-from app.listings.models import DealType, PropertyType
+from app.listings.models import DealType, ListingStatus, PropertyType
 from app.listings.schemas import ListingCreate, ListingResponse, ListingsMapResponse, ListingsPage, ListingUpdate
 from core.database import get_db
 
@@ -24,10 +24,11 @@ async def get_favorites(
 
 @router.get("/my", response_model=list[ListingResponse])
 async def get_my(
+    status: Optional[ListingStatus] = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list:
-    return await service.get_my(db, current_user.id)
+    return await service.get_my(db, current_user.id, status)
 
 
 @router.get("", response_model=ListingsPage)

@@ -188,6 +188,35 @@ async def test_get_my_listings_unauthorized(client: AsyncClient):
     assert resp.status_code == 401
 
 
+async def test_get_my_listings_filter_by_status(
+    client: AsyncClient, listing: dict, agent_token: str
+):
+    # Архивируем объявление
+    await client.delete(
+        f"/api/listings/{listing['id']}",
+        headers={"Authorization": f"Bearer {agent_token}"},
+    )
+    # Создаём новое активное
+    await client.post(
+        "/api/listings",
+        json={**_LISTING_PAYLOAD, "title": "Активное"},
+        headers={"Authorization": f"Bearer {agent_token}"},
+    )
+
+    active = await client.get(
+        "/api/listings/my?status=active",
+        headers={"Authorization": f"Bearer {agent_token}"},
+    )
+    archived = await client.get(
+        "/api/listings/my?status=archived",
+        headers={"Authorization": f"Bearer {agent_token}"},
+    )
+    assert active.status_code == 200
+    assert all(l["status"] == "active" for l in active.json())
+    assert archived.status_code == 200
+    assert all(l["status"] == "archived" for l in archived.json())
+
+
 # ── Favorites ─────────────────────────────────────────────────────────────────
 
 async def test_add_and_get_favorite(client: AsyncClient, listing: dict, user_token: str):
