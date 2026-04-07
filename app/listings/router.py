@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, role_required
+from app.auth.dependencies import get_current_user, get_optional_user, role_required
 from app.auth.models import User, UserRole
 from app.listings import service
 from app.listings.models import DealType, ListingStatus, PropertyType
@@ -80,9 +80,15 @@ async def get_similar(
 @router.get("/{listing_id}", response_model=ListingResponse)
 async def get_listing(
     listing_id: uuid.UUID,
+    current_user: Optional[User] = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    return await service.get_by_id(db, listing_id)
+    listing = await service.get_by_id_for_user(
+        db, listing_id, current_user.id if current_user else None
+    )
+    response = ListingResponse.model_validate(listing)
+    response.is_favorite = listing._is_favorite
+    return response
 
 
 @router.post("", response_model=ListingResponse, status_code=201)

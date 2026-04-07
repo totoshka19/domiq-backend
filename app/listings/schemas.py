@@ -88,6 +88,7 @@ class ListingResponse(BaseModel):
     photos: list[ListingPhotoResponse] = []
     owner: Optional[OwnerResponse] = None
     main_photo_url: Optional[str] = None
+    is_favorite: bool = False
 
     @model_validator(mode="after")
     def set_main_photo_url(self) -> "ListingResponse":

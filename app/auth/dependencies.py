@@ -35,6 +35,30 @@ async def get_current_user(
     return user
 
 
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> Optional[User]:
+    if not credentials:
+        return None
+    token = credentials.credentials
+    try:
+        payload = decode_token(token)
+        user_id: str = payload.get("sub")
+        if not user_id:
+            return None
+    except JWTError:
+        return None
+
+    from app.auth.service import get_by_id
+    import uuid
+    try:
+        user = await get_by_id(db, uuid.UUID(user_id))
+        return user if user.is_active else None
+    except Exception:
+        return None
+
+
 def role_required(*roles: str):
     async def checker(current_user: User = Depends(get_current_user)) -> User:
         if current_user.role.value not in roles:

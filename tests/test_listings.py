@@ -123,6 +123,27 @@ async def test_get_listing_not_found(client: AsyncClient):
     assert resp.status_code == 404
 
 
+async def test_get_listing_is_favorite_false_without_auth(client: AsyncClient, listing: dict):
+    resp = await client.get(f"/api/listings/{listing['id']}")
+    assert resp.status_code == 200
+    assert resp.json()["is_favorite"] is False
+
+
+async def test_get_listing_is_favorite_true_after_add(
+    client: AsyncClient, listing: dict, user_token: str
+):
+    await client.post(
+        f"/api/listings/{listing['id']}/favorite",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    resp = await client.get(
+        f"/api/listings/{listing['id']}",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["is_favorite"] is True
+
+
 # ── PATCH /api/listings/{id} ──────────────────────────────────────────────────
 
 async def test_update_listing_success(client: AsyncClient, listing: dict, agent_token: str):

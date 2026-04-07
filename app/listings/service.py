@@ -23,6 +23,23 @@ async def get_by_id(db: AsyncSession, listing_id: uuid.UUID) -> Listing:
     return listing
 
 
+async def get_by_id_for_user(
+    db: AsyncSession, listing_id: uuid.UUID, user_id: Optional[uuid.UUID]
+) -> Listing:
+    listing = await get_by_id(db, listing_id)
+    if user_id:
+        fav = await db.execute(
+            select(Favorite).where(
+                Favorite.user_id == user_id,
+                Favorite.listing_id == listing_id,
+            )
+        )
+        listing._is_favorite = fav.scalar_one_or_none() is not None
+    else:
+        listing._is_favorite = False
+    return listing
+
+
 async def get_list(
     db: AsyncSession,
     page: int = 1,
