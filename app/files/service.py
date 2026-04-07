@@ -148,6 +148,37 @@ async def delete_photo(
     await db.commit()
 
 
+async def upload_avatar(
+    db: AsyncSession,
+    file: UploadFile,
+    user_id: uuid.UUID,
+) -> str:
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Недопустимый тип файла: {file.content_type}. Разрешены: jpeg, png, webp",
+        )
+
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="Файл превышает 10 МБ")
+
+    ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename else "jpg"
+    key = f"avatars/{user_id}.{ext}"
+
+    try:
+        _s3_client().put_object(
+            Bucket=settings.S3_BUCKET_NAME,
+            Key=key,
+            Body=content,
+            ContentType=file.content_type,
+        )
+    except ClientError as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка загрузки файла: {e}")
+
+    return _public_url(key)
+
+
 async def reorder_photos(
     db: AsyncSession,
     listing_id: uuid.UUID,
