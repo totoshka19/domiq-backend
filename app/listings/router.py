@@ -8,7 +8,7 @@ from app.auth.dependencies import get_current_user, role_required
 from app.auth.models import User, UserRole
 from app.listings import service
 from app.listings.models import DealType, PropertyType
-from app.listings.schemas import ListingCreate, ListingResponse, ListingsPage, ListingUpdate
+from app.listings.schemas import ListingCreate, ListingResponse, ListingsMapResponse, ListingsPage, ListingUpdate
 from core.database import get_db
 
 router = APIRouter()
@@ -51,6 +51,18 @@ async def get_listings(
         price_min, price_max, rooms, area_min, area_max,
         sort_by, sort_order,
     )
+
+
+@router.get("/map", response_model=ListingsMapResponse)
+async def get_map(
+    city: Optional[str] = None,
+    deal_type: Optional[DealType] = None,
+    property_type: Optional[PropertyType] = None,
+    price_min: Optional[float] = None,
+    price_max: Optional[float] = None,
+    db: AsyncSession = Depends(get_db),
+) -> ListingsMapResponse:
+    return await service.get_map_points(db, city, deal_type, property_type, price_min, price_max)
 
 
 @router.get("/{listing_id}", response_model=ListingResponse)

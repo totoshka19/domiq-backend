@@ -84,3 +84,16 @@ class ListingsPage(BaseModel):
     page: int
     limit: int
     pages: int
+
+
+class MapPoint(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    latitude: Decimal
+    longitude: Decimal
+    price: Decimal
+
+
+class ListingsMapResponse(BaseModel):
+    points: list[MapPoint]

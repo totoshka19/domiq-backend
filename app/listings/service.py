@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.listings.models import DealType, Favorite, Listing, ListingStatus, PropertyType
-from app.listings.schemas import ListingCreate, ListingUpdate, ListingsPage
+from app.listings.schemas import ListingCreate, ListingUpdate, ListingsMapResponse, ListingsPage, MapPoint
 
 
 async def get_by_id(db: AsyncSession, listing_id: uuid.UUID) -> Listing:
@@ -83,6 +83,41 @@ async def get_list(
         limit=limit,
         pages=math.ceil(total / limit) if total else 0,
     )
+
+
+async def get_map_points(
+    db: AsyncSession,
+    city: Optional[str] = None,
+    deal_type: Optional[DealType] = None,
+    property_type: Optional[PropertyType] = None,
+    price_min: Optional[float] = None,
+    price_max: Optional[float] = None,
+) -> ListingsMapResponse:
+    query = (
+        select(Listing)
+        .where(
+            Listing.status == ListingStatus.active,
+            Listing.latitude.is_not(None),
+            Listing.longitude.is_not(None),
+        )
+    )
+    if city:
+        query = query.where(Listing.city.ilike(f"%{city}%"))
+    if deal_type:
+        query = query.where(Listing.deal_type == deal_type)
+    if property_type:
+        query = query.where(Listing.property_type == property_type)
+    if price_min is not None:
+        query = query.where(Listing.price >= price_min)
+    if price_max is not None:
+        query = query.where(Listing.price <= price_max)
+
+    result = await db.execute(query)
+    points = [
+        MapPoint(id=l.id, latitude=l.latitude, longitude=l.longitude, price=l.price)
+        for l in result.scalars().all()
+    ]
+    return ListingsMapResponse(points=points)
 
 
 async def create(db: AsyncSession, data: ListingCreate, owner_id: uuid.UUID) -> Listing:
