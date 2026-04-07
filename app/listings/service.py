@@ -152,8 +152,11 @@ async def create(db: AsyncSession, data: ListingCreate, owner_id: uuid.UUID) -> 
     # Уведомляем администратора о новом объявлении на модерацию
     from core.config import settings
     if settings.ADMIN_EMAIL:
-        from app.notifications.tasks import send_moderation_notification
-        send_moderation_notification.delay(settings.ADMIN_EMAIL, listing.title)
+        try:
+            from app.notifications.tasks import send_moderation_notification
+            send_moderation_notification.delay(settings.ADMIN_EMAIL, listing.title)
+        except Exception:
+            pass
 
     return listing
 
@@ -198,8 +201,11 @@ async def archive(
     owner_result = await db.execute(select(User).where(User.id == owner_id))
     owner = owner_result.scalar_one_or_none()
     if owner:
-        from app.notifications.tasks import send_listing_status_notification
-        send_listing_status_notification.delay(owner.email, listing.title, ListingStatus.archived.value)
+        try:
+            from app.notifications.tasks import send_listing_status_notification
+            send_listing_status_notification.delay(owner.email, listing.title, ListingStatus.archived.value)
+        except Exception:
+            pass
 
     result = await db.execute(
         select(Listing).options(selectinload(Listing.photos), selectinload(Listing.owner)).where(Listing.id == listing_id)

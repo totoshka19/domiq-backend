@@ -13,6 +13,7 @@ from app.chat.router import router as chat_router
 from app.files.router import router as files_router
 from app.admin.router import router as admin_router
 from app.users.router import router as users_router
+from app.notifications.router import router as notifications_router
 
 app = FastAPI(
     title="Domiq API",
@@ -36,7 +37,8 @@ app.include_router(search_router,   prefix="/api/search",   tags=["Search"])
 app.include_router(chat_router,     prefix="/api/chat",     tags=["Chat"])
 app.include_router(files_router,    prefix="/api/files",    tags=["Files"])
 app.include_router(admin_router,    prefix="/api/admin",    tags=["Admin"])
-app.include_router(users_router,    prefix="/api/users",    tags=["Users"])
+app.include_router(users_router,         prefix="/api/users",         tags=["Users"])
+app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
 
 
 @app.get("/health")

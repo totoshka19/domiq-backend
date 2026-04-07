@@ -121,6 +121,20 @@ async def moderate_listing(
         except Exception:
             pass  # Celery недоступен — не блокируем модерацию
 
+        # WebSocket-уведомление владельцу (мгновенно, без Celery)
+        import asyncio
+        from app.notifications.router import notification_manager
+        asyncio.ensure_future(notification_manager.send(
+            listing.owner_id,
+            {
+                "type": "listing_status_changed",
+                "listing_id": str(listing.id),
+                "title": listing.title,
+                "status": listing.status.value,
+                "reject_reason": listing.reject_reason,
+            },
+        ))
+
     return listing
 
 
