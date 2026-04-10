@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user, get_optional_user, role_required
 from app.auth.models import User, UserRole
 from app.listings import service
-from app.listings.models import DealType, ListingStatus, PropertyType
+from app.listings.filters import ListingFilters
+from app.listings.models import ListingStatus
 from app.listings.schemas import ListingCreate, ListingResponse, ListingsMapResponse, ListingsPage, ListingUpdate
 from core.database import get_db
 
@@ -39,37 +40,20 @@ async def get_my(
 async def get_listings(
     page: int = 1,
     limit: int = 20,
-    city: Optional[str] = None,
-    deal_type: Optional[DealType] = None,
-    property_type: Optional[PropertyType] = None,
-    price_min: Optional[float] = None,
-    price_max: Optional[float] = None,
-    rooms: Optional[int] = None,
-    area_min: Optional[float] = None,
-    area_max: Optional[float] = None,
-    floor_min: Optional[int] = None,
-    floor_max: Optional[int] = None,
     sort_by: str = "created_at",
     sort_order: str = "desc",
+    filters: ListingFilters = Depends(),
     db: AsyncSession = Depends(get_db),
 ) -> ListingsPage:
-    return await service.get_list(
-        db, page, limit, city, deal_type, property_type,
-        price_min, price_max, rooms, area_min, area_max,
-        floor_min, floor_max, sort_by, sort_order,
-    )
+    return await service.get_list(db, page, limit, filters, sort_by, sort_order)
 
 
 @router.get("/map", response_model=ListingsMapResponse)
 async def get_map(
-    city: Optional[str] = None,
-    deal_type: Optional[DealType] = None,
-    property_type: Optional[PropertyType] = None,
-    price_min: Optional[float] = None,
-    price_max: Optional[float] = None,
+    filters: ListingFilters = Depends(),
     db: AsyncSession = Depends(get_db),
 ) -> ListingsMapResponse:
-    return await service.get_map_points(db, city, deal_type, property_type, price_min, price_max)
+    return await service.get_map_points(db, filters)
 
 
 @router.get("/{listing_id}/similar", response_model=list[ListingResponse])

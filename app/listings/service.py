@@ -7,7 +7,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.listings.models import DealType, Favorite, Listing, ListingStatus, PropertyType
+from app.listings.filters import ListingFilters
+from app.listings.models import Favorite, Listing, ListingStatus
 from app.listings.schemas import ListingCreate, ListingUpdate, ListingsMapResponse, ListingsPage, MapPoint
 
 
@@ -40,20 +41,36 @@ async def get_by_id_for_user(
     return listing
 
 
+def _apply_filters(query, filters: ListingFilters):
+    """Применяет ListingFilters к SQLAlchemy-запросу. Используется в get_list и get_map_points."""
+    if filters.city:
+        query = query.where(Listing.city.ilike(f"%{filters.city}%"))
+    if filters.deal_type:
+        query = query.where(Listing.deal_type == filters.deal_type)
+    if filters.property_type:
+        query = query.where(Listing.property_type == filters.property_type)
+    if filters.price_min is not None:
+        query = query.where(Listing.price >= filters.price_min)
+    if filters.price_max is not None:
+        query = query.where(Listing.price <= filters.price_max)
+    if filters.rooms is not None:
+        query = query.where(Listing.rooms == filters.rooms)
+    if filters.area_min is not None:
+        query = query.where(Listing.area >= filters.area_min)
+    if filters.area_max is not None:
+        query = query.where(Listing.area <= filters.area_max)
+    if filters.floor_min is not None:
+        query = query.where(Listing.floor >= filters.floor_min)
+    if filters.floor_max is not None:
+        query = query.where(Listing.floor <= filters.floor_max)
+    return query
+
+
 async def get_list(
     db: AsyncSession,
     page: int = 1,
     limit: int = 20,
-    city: Optional[str] = None,
-    deal_type: Optional[DealType] = None,
-    property_type: Optional[PropertyType] = None,
-    price_min: Optional[float] = None,
-    price_max: Optional[float] = None,
-    rooms: Optional[int] = None,
-    area_min: Optional[float] = None,
-    area_max: Optional[float] = None,
-    floor_min: Optional[int] = None,
-    floor_max: Optional[int] = None,
+    filters: Optional[ListingFilters] = None,
     sort_by: str = "created_at",
     sort_order: str = "desc",
 ) -> ListingsPage:
@@ -63,26 +80,8 @@ async def get_list(
         .where(Listing.status == ListingStatus.active)
     )
 
-    if city:
-        query = query.where(Listing.city.ilike(f"%{city}%"))
-    if deal_type:
-        query = query.where(Listing.deal_type == deal_type)
-    if property_type:
-        query = query.where(Listing.property_type == property_type)
-    if price_min is not None:
-        query = query.where(Listing.price >= price_min)
-    if price_max is not None:
-        query = query.where(Listing.price <= price_max)
-    if rooms is not None:
-        query = query.where(Listing.rooms == rooms)
-    if area_min is not None:
-        query = query.where(Listing.area >= area_min)
-    if area_max is not None:
-        query = query.where(Listing.area <= area_max)
-    if floor_min is not None:
-        query = query.where(Listing.floor >= floor_min)
-    if floor_max is not None:
-        query = query.where(Listing.floor <= floor_max)
+    if filters:
+        query = _apply_filters(query, filters)
 
     count_result = await db.execute(
         select(func.count()).select_from(query.subquery())
@@ -110,11 +109,7 @@ async def get_list(
 
 async def get_map_points(
     db: AsyncSession,
-    city: Optional[str] = None,
-    deal_type: Optional[DealType] = None,
-    property_type: Optional[PropertyType] = None,
-    price_min: Optional[float] = None,
-    price_max: Optional[float] = None,
+    filters: Optional[ListingFilters] = None,
 ) -> ListingsMapResponse:
     query = (
         select(Listing)
@@ -124,16 +119,9 @@ async def get_map_points(
             Listing.longitude.is_not(None),
         )
     )
-    if city:
-        query = query.where(Listing.city.ilike(f"%{city}%"))
-    if deal_type:
-        query = query.where(Listing.deal_type == deal_type)
-    if property_type:
-        query = query.where(Listing.property_type == property_type)
-    if price_min is not None:
-        query = query.where(Listing.price >= price_min)
-    if price_max is not None:
-        query = query.where(Listing.price <= price_max)
+
+    if filters:
+        query = _apply_filters(query, filters)
 
     result = await db.execute(query)
     points = [
